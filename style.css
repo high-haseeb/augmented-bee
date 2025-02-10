@@ -1,0 +1,25 @@
+body, html {
+    margin: 0;
+    padding: 0;
+    background-color: #181818;
+    color: white;
+    font-family: sans;
+    font-weight: bold;
+    overflow: hidden;
+}
+
+#header {
+    position: absolute;
+    top: 2rem;
+    left: 2rem;
+}
+#title {
+    font-size: 3rem;
+}
+
+#game {
+    padding: 0;
+    margin: 0;
+    width: 100vw;
+    height: 100vh;
+}
