@@ -1,7 +1,6 @@
 import * as THREE from "three";
 import { ARButton } from "three/examples/jsm/webxr/ARButton.js";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
-import { DEG2RAD } from "three/src/math/MathUtils";
 
 const canvas = document.getElementById("game");
 
@@ -33,16 +32,17 @@ const mixers = [];
 const loader = new GLTFLoader();
 let beeHeadMixer;
 let beeIsTalking = true;
+let bee; // Store bee globally
 
 const loadBeeModel = () => {
-    const bee = new THREE.Group();
+    bee = new THREE.Group();
     let beeSpeakAction = null;
     beeHeadMixer = new THREE.AnimationMixer(bee);
 
     loader.load("beeedark.glb", (glb) => {
         bee.add(glb.scene);
         bee.scale.set(0.2, 0.2, 0.2);
-        bee.position.z = -5;
+        bee.position.set(0, 0, -5);
         bee.lookAt(0, 0, 0);
         scene.add(bee);
         const mixer = new THREE.AnimationMixer(bee);
@@ -68,7 +68,7 @@ const loadBeeModel = () => {
 
         mixers.push(mixer);
     });
-}
+};
 loadBeeModel();
 
 function onWindowResize() {
@@ -77,3 +77,28 @@ function onWindowResize() {
     renderer.setSize(window.innerWidth, window.innerHeight);
 }
 window.addEventListener('resize', onWindowResize);
+
+const moveSpeed = 0.1;
+
+document.body.insertAdjacentHTML("beforeend", `
+    <div style="position: fixed; bottom: 20px; left: 20px; display: flex; flex-direction: column;">
+        <button id="up" style="width: 50px; height: 50px;">⬆</button>
+        <div style="display: flex;">
+            <button id="left" style="width: 50px; height: 50px;">⬅</button>
+            <button id="right" style="width: 50px; height: 50px;">➡</button>
+        </div>
+        <button id="down" style="width: 50px; height: 50px;">⬇</button>
+    </div>
+`);
+
+const moveBee = (dx, dy) => {
+    if (bee) {
+        bee.position.x += dx;
+        bee.position.y += dy;
+    }
+};
+
+document.getElementById("up").addEventListener("touchstart", () => moveBee(0, moveSpeed));
+document.getElementById("down").addEventListener("touchstart", () => moveBee(0, -moveSpeed));
+document.getElementById("left").addEventListener("touchstart", () => moveBee(-moveSpeed, 0));
+document.getElementById("right").addEventListener("touchstart", () => moveBee(moveSpeed, 0));
