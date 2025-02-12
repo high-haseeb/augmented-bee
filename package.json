@@ -3,6 +3,7 @@
     "dev": "vite"
   },
   "dependencies": {
+    "openai": "^4.83.0",
     "three": "^0.173.0",
     "typescript": "^5.7.3",
     "vite": "^6.1.0"

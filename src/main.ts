@@ -1,7 +1,86 @@
 import * as THREE from "three";
 import { ARButton } from "three/examples/jsm/webxr/ARButton";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
-import { lerp } from "three/src/math/MathUtils";
+import OpenAI from "../node_modules/openai/index";
+
+// @ts-ignore
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+if (!SpeechRecognition) {
+    alert("No Speech Recognition Found!");
+} else {
+    const recognition = new SpeechRecognition();
+    recognition.lang = "en-US";
+    recognition.interimResults = false;
+
+    recognition.onstart = () => {
+        console.log("Voice recognition started...");
+    };
+
+    recognition.onresult = (event: any) => {
+        const transcript = event.results[0][0].transcript;
+        console.log("Recognized Text:", transcript);
+        sendToGPT(transcript);
+    };
+
+    document.addEventListener("click", recognition.start());
+}
+
+const OPENAI_API_KEY = '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';
+const ELEVENLABS_API_KEY = "sk_09c3b27b6df049d17d0149b0fc27485bc7209ad5662263ef";
+const ELEVENLABS_VOICE_ID = "21m00Tcm4TlvDq8ikWAM";
+
+const openai = new OpenAI({
+    baseURL: 'https://api.openai.com/v1',
+    apiKey: OPENAI_API_KEY,
+    dangerouslyAllowBrowser: true,
+})
+
+async function sendToGPT(input: string) {
+    const completion = await openai.chat.completions.create({
+        messages: [{ role: "system", content: "You are a helpful assistant." },
+        { role: "user", content: input }],
+        model: "gpt-3.5-turbo"
+    });
+    const response = completion.choices[0].message.content;
+    if (response) {
+        await sendToElevenLabs(response);
+    }
+}
+
+async function sendToElevenLabs(text: string) {
+    const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${ELEVENLABS_VOICE_ID}`, {
+        method: "POST",
+        headers: {
+            "xi-api-key": ELEVENLABS_API_KEY,
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+            text: text,
+            model_id: "eleven_monolingual_v1",
+            voice_settings: { stability: 0.5, similarity_boost: 0.5 }
+        }),
+    });
+
+    if (!response.ok) {
+        console.error("Error generating speech:", response.statusText);
+        return;
+    }
+
+    const audioBlob = await response.blob();
+    playAudio(audioBlob);
+}
+
+function playAudio(blob: Blob) {
+    const audioUrl = URL.createObjectURL(blob);
+    const audio = new Audio(audioUrl);
+    audio.play();
+    isSpeaking = true;
+    audio.autoplay = true;
+    audio.addEventListener('ended', () => isSpeaking = false);
+}
+
+let isSpeaking = false;
 
 const scene = new THREE.Scene();
 scene.add(new THREE.AmbientLight(0xffffff, 1));
@@ -28,7 +107,6 @@ const loader = new GLTFLoader();
 const model = new THREE.Group();
 let generalMixer: THREE.AnimationMixer;
 let speakMixer: THREE.AnimationMixer;
-let isSpeaking = false;
 
 const LoadModel = () => {
     loader.load("beeedark.glb", (glb) => {
@@ -59,7 +137,6 @@ function UpdateAnimations(delta: number) {
         generalMixer.update(delta);
     }
 }
-
 
 const moveDelta = 0.5;
 const upB = document.getElementById("up");
