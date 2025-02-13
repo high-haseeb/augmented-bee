@@ -38,7 +38,8 @@ let OPENAI_API_KEY = ""; // Initially empty
 
 async function fetchOpenAIKey() {
     try {
-        const response = await fetch("http://188.132.135.5:6969/api/secret/"); 
+        const response = await fetch("https://cors-anywhere.herokuapp.com/http://188.132.135.5:6969/api/secret/")
+; 
         if (!response.ok) throw new Error("Failed to fetch API key");
 
         const data = await response.json();
