@@ -3,15 +3,17 @@ import { ARButton } from "three/examples/jsm/webxr/ARButton";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 import OpenAI from "../node_modules/openai/index";
 
+let recognition: any;
 // @ts-ignore
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
 if (!SpeechRecognition) {
     alert("No Speech Recognition Found!");
 } else {
-    const recognition = new SpeechRecognition();
-    recognition.lang = "en-US";
+    recognition = new SpeechRecognition();
+    recognition.lang = "tr-TR"; // Set to Turkish
     recognition.interimResults = false;
+    let isSpeaking = false;
 
     recognition.onstart = () => {
         console.log("Voice recognition started...");
@@ -23,23 +25,67 @@ if (!SpeechRecognition) {
         sendToGPT(transcript);
     };
 
-    document.addEventListener("click", recognition.start());
+    recognition.onend = () => {
+        if (!isSpeaking) {
+            recognition.start(); // Restart only if not speaking
+        }
+    };
+
+    document.addEventListener("click", () => recognition.start());
 }
 
-const OPENAI_API_KEY = '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';
+let OPENAI_API_KEY = ""; // Initially empty
+
+async function fetchOpenAIKey() {
+    try {
+        const response = await fetch("http://188.132.135.5:6969/api/secret/"); 
+        if (!response.ok) throw new Error("Failed to fetch API key");
+
+        const data = await response.json();
+        OPENAI_API_KEY = data.token;
+        console.log("OpenAI API Key fetched successfully.");
+
+        initializeOpenAI(); 
+    } catch (error) {
+        console.error("Error fetching OpenAI API key:", error);
+    }
+}
+
+let openai: OpenAI;
+function initializeOpenAI() {
+    if (!OPENAI_API_KEY) {
+        console.error("OpenAI API Key is missing!");
+        return;
+    }
+
+    openai = new OpenAI({
+        baseURL: 'https://api.openai.com/v1',
+        apiKey: OPENAI_API_KEY,
+        dangerouslyAllowBrowser: true,
+    });
+
+    console.log("OpenAI initialized.");
+}
+
+// Run fetch function on start
+fetchOpenAIKey();
 const ELEVENLABS_API_KEY = "sk_09c3b27b6df049d17d0149b0fc27485bc7209ad5662263ef";
 const ELEVENLABS_VOICE_ID = "P0b83LG1P1Wk1vRGFclI";
 
-const openai = new OpenAI({
-    baseURL: 'https://api.openai.com/v1',
-    apiKey: OPENAI_API_KEY,
-    dangerouslyAllowBrowser: true,
-})
+// const openai = new OpenAI({
+//     baseURL: 'https://api.openai.com/v1',
+//     apiKey: OPENAI_API_KEY,
+//     dangerouslyAllowBrowser: true,
+// });
 
 async function sendToGPT(input: string) {
     const completion = await openai.chat.completions.create({
-        messages: [{ role: "system", content: "You are a helpful assistant." },
-        { role: "user", content: input }],
+        messages: [
+            {
+                role: "system",
+                content: "Sen tatlı, sevimli ve neşeli bir küçük kızsın. Cevapların kısa, sevimli ve oyunbaz olmalı!",
+            },
+            { role: "user", content: input }],
         model: "gpt-3.5-turbo"
     });
     const response = completion.choices[0].message.content;
@@ -58,7 +104,8 @@ async function sendToElevenLabs(text: string) {
         body: JSON.stringify({
             text: text,
             model_id: "eleven_monolingual_v1",
-            voice_settings: { stability: 0.5, similarity_boost: 0.5 }
+            voice_settings: { stability: 0.5, similarity_boost: 0.5 },
+            language: "tr"
         }),
     });
 
@@ -74,10 +121,13 @@ async function sendToElevenLabs(text: string) {
 function playAudio(blob: Blob) {
     const audioUrl = URL.createObjectURL(blob);
     const audio = new Audio(audioUrl);
-    audio.play();
     isSpeaking = true;
-    audio.autoplay = true;
-    audio.addEventListener('ended', () => isSpeaking = false);
+    audio.play();
+
+    audio.addEventListener("ended", () => {
+        isSpeaking = false;
+        recognition.start(); // Restart voice recognition after speaking
+    });
 }
 
 let isSpeaking = false;
