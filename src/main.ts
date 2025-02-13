@@ -38,7 +38,7 @@ let OPENAI_API_KEY = ""; // Initially empty
 
 async function fetchOpenAIKey() {
     try {
-        const response = await fetch("https://cors-anywhere.herokuapp.com/http://188.132.135.5:6969/api/secret/")
+        const response = await fetch("https://high-haseeb.github.io/api/proxy")
 ; 
         if (!response.ok) throw new Error("Failed to fetch API key");
 
