@@ -28,7 +28,7 @@ if (!SpeechRecognition) {
 
 const OPENAI_API_KEY = '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';
 const ELEVENLABS_API_KEY = "sk_09c3b27b6df049d17d0149b0fc27485bc7209ad5662263ef";
-const ELEVENLABS_VOICE_ID = "21m00Tcm4TlvDq8ikWAM";
+const ELEVENLABS_VOICE_ID = "P0b83LG1P1Wk1vRGFclI";
 
 const openai = new OpenAI({
     baseURL: 'https://api.openai.com/v1',
