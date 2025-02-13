@@ -13,8 +13,7 @@ if (!SpeechRecognition) {
     recognition = new SpeechRecognition();
     recognition.lang = "tr-TR"; // Set to Turkish
     recognition.interimResults = false;
-    let isSpeaking = false;
-
+    
     recognition.onstart = () => {
         console.log("Voice recognition started...");
     };
@@ -26,27 +25,27 @@ if (!SpeechRecognition) {
     };
 
     recognition.onend = () => {
-        if (!isSpeaking) {
-            recognition.start(); // Restart only if not speaking
-        }
+        console.log("Voice recognition stopped.");
     };
 
-    document.addEventListener("click", () => recognition.start());
+    document.addEventListener("click", () => {
+        console.log("Starting voice recognition...");
+        recognition.start();
+    });
 }
 
 let OPENAI_API_KEY = ""; // Initially empty
 
 async function fetchOpenAIKey() {
     try {
-        const response = await fetch("https://high-haseeb.github.io/api/proxy")
-; 
+        const response = await fetch("https://high-haseeb.github.io/api/proxy");
         if (!response.ok) throw new Error("Failed to fetch API key");
 
         const data = await response.json();
         OPENAI_API_KEY = data.token;
         console.log("OpenAI API Key fetched successfully.");
 
-        initializeOpenAI(); 
+        initializeOpenAI();
     } catch (error) {
         console.error("Error fetching OpenAI API key:", error);
     }
@@ -70,14 +69,9 @@ function initializeOpenAI() {
 
 // Run fetch function on start
 fetchOpenAIKey();
+
 const ELEVENLABS_API_KEY = "sk_09c3b27b6df049d17d0149b0fc27485bc7209ad5662263ef";
 const ELEVENLABS_VOICE_ID = "P0b83LG1P1Wk1vRGFclI";
-
-// const openai = new OpenAI({
-//     baseURL: 'https://api.openai.com/v1',
-//     apiKey: OPENAI_API_KEY,
-//     dangerouslyAllowBrowser: true,
-// });
 
 async function sendToGPT(input: string) {
     const completion = await openai.chat.completions.create({
@@ -86,9 +80,11 @@ async function sendToGPT(input: string) {
                 role: "system",
                 content: "Sen tatlı, sevimli ve neşeli bir küçük kızsın. Cevapların kısa, sevimli ve oyunbaz olmalı!",
             },
-            { role: "user", content: input }],
+            { role: "user", content: input }
+        ],
         model: "gpt-3.5-turbo"
     });
+
     const response = completion.choices[0].message.content;
     if (response) {
         await sendToElevenLabs(response);
@@ -122,12 +118,12 @@ async function sendToElevenLabs(text: string) {
 function playAudio(blob: Blob) {
     const audioUrl = URL.createObjectURL(blob);
     const audio = new Audio(audioUrl);
-    isSpeaking = true;
     audio.play();
+    isSpeaking = true;
 
     audio.addEventListener("ended", () => {
         isSpeaking = false;
-        recognition.start(); // Restart voice recognition after speaking
+        console.log("Audio playback finished.");
     });
 }
 
